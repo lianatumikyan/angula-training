@@ -1,5 +1,6 @@
-import {Subject} from 'rxjs';
+import {Observable, Subject, timer} from 'rxjs';
 import {Component, OnInit} from '@angular/core';
+import {takeUntil} from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
@@ -7,25 +8,30 @@ import {Component, OnInit} from '@angular/core';
   styleUrls: ['./app.component.less']
 })
 export class AppComponent implements OnInit {
-  public subject = new Subject<number>();
-
-  fibonacci(number) {
-
-    let previous_first = 0, previous_second = 1, next = 1;
-
-    for(let i = 2; i <= number; i++) {
-      next = previous_first + previous_second;
-      previous_first = previous_second;
-      previous_second = next;
-      this.subject.next(next);
-    }
-    return next;
-  };
+  public source = timer(1000, 1000);
+  public destroy = new Subject<void>();
 
   ngOnInit(): void {
-    this.subject.subscribe(num => {
-      console.log(num);
+    this.source = Observable.create(() => {
+      let previous_first = 0;
+      let previous_second = 1;
+      let next = 1;
+      setInterval(() => {
+        next = previous_first + previous_second;
+        previous_first = previous_second;
+        previous_second = next;
+        console.log(next);
+      }, 1000);
     });
-    this.fibonacci(10);
+  }
+
+  startTimer() {
+    this.source.subscribe(val => {
+      console.log(val);
+    }, takeUntil(this.destroy));
+  }
+
+  stopTimer() {
+    this.destroy.next();
   }
 }
